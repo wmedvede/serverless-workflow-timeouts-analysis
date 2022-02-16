@@ -1,0 +1,114 @@
+{
+  "id": "multipleactions",
+  "version": "1.0",
+  "name": "Multiple Actions Example",
+  "expressionLang": "jsonpath",
+  "description": "A simple SW example with an operation with multiple actions",
+  "start": "Initialization",
+  "events": [
+    {
+      "name": "MultipleActionsEventsOut",
+      "source": "",
+      "type": "multiple_actions_events_out"
+    }
+  ],
+  "errors": [
+    {
+      "name": "execution error",
+      "code": "javax.ws.rs.ProcessingException"
+    }
+  ],
+  "functions": [
+    {
+      "name": "executeScript",
+      "type": "custom",
+      "operation": "script"
+    },
+    {
+      "name": "sendMultipleActionRequest",
+      "type": "rest",
+      "operation": "specs/external-service.yaml#sendRequest"
+    }
+  ],
+  "states": [
+    {
+      "name": "Initialization",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowInitialDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Multiple actions1, workflowdata received as process parameter\", kcontext);"
+            }
+          }
+        },
+        {
+          "name": "secondPrintWorkflowInitialDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Multiple actions2, workflowdata received as process parameter\", kcontext);"
+            }
+          }
+        },
+        {
+          "name": "thirdInitialDataAction",
+          "functionRef": {
+            "refName": "sendMultipleActionRequest",
+            "arguments": {
+              "callbackRequest": "{ \\\"query\\\": \\\"$.query\\\" }"
+            }
+          }
+        },
+        {
+          "name": "fourthInitialDataAction",
+          "eventRef": {
+            "triggerEventRef": "MultipleActionsEventsOut",
+            "data": "{ \\\"result\\\": \\\"value\\\" }"
+          }
+        }
+      ],
+      "onErrors": [
+        {
+          "errorRef": "execution error",
+          "transition": "FinalizeWithError"
+        }
+      ],
+      "transition": "FinalizeSuccessful"
+    },
+    {
+      "name": "FinalizeSuccessful",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowFinalizeSuccessfulDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Workflowdata finalized successful\", kcontext);"
+            }
+          }
+        }
+      ],
+      "end": true
+    },
+    {
+      "name": "FinalizeWithError",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowFinalizeWithErrorDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Workflowdata finalized with errors\", kcontext);"
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

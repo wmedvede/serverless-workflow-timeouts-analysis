@@ -1,0 +1,26 @@
+---
+openapi: 3.0.3
+info:
+  title: serverless-workflow-timeouts-analysis API
+  version: 1.0.0-SNAPSHOT
+paths:
+  /external-service/sendRequest:
+    post:
+      operationId: sendRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackRequest'
+      responses:
+        "200":
+          description: OK
+components:
+  schemas:
+    CallbackRequest:
+      type: object
+      properties:
+        processInstanceId:
+          type: string
+        query:
+          type: string

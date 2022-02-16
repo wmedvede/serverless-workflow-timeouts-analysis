@@ -1,0 +1,103 @@
+{
+  "id": "callbackexamplesubflowaction",
+  "version": "1.0",
+  "name": "Callback Example Subflow Action",
+  "expressionLang": "jsonpath",
+  "description": "A simple SW example that uses the callback state with a subflow as action",
+  "start": "Initialization",
+  "events": [
+    {
+      "name": "callbackEvent",
+      "source": "",
+      "type": "callback_response_events_in"
+    }
+  ],
+  "errors": [
+    {
+      "name": "execution error",
+      "code": "javax.ws.rs.ProcessingException"
+    }
+  ],
+  "functions": [
+    {
+      "name": "executeScript",
+      "type": "custom",
+      "operation": "script"
+    }
+  ],
+  "states": [
+    {
+      "name": "Initialization",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowInitialDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Workflowdata received as process parameter\", kcontext);"
+            }
+          }
+        },
+        {
+          "name": "secondPrintWorkflowInitialDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Second Workflowdata received as process parameter\", kcontext);"
+            }
+          }
+        }
+      ],
+      "transition": "CallbackState"
+    },
+    {
+      "name": "CallbackState",
+      "type": "callback",
+      "action": {
+        "name": "callbackAction",
+        "subFlowRef": "simplesubflow"
+      },
+      "eventRef": "callbackEvent",
+      "transition": "FinalizeSuccessful",
+      "onErrors": [
+        {
+          "errorRef": "execution error",
+          "transition": "FinalizeWithError"
+        }
+      ]
+    },
+    {
+      "name": "FinalizeSuccessful",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowFinalizeSuccessfulDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Workflowdata finalized successful\", kcontext);"
+            }
+          }
+        }
+      ],
+      "end": true
+    },
+    {
+      "name": "FinalizeWithError",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowFinalizeWithErrorDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Workflowdata finalized with errors\", kcontext);"
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

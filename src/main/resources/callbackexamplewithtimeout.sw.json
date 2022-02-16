@@ -1,0 +1,116 @@
+{
+  "id": "callbackexamplewithtimeout",
+  "version": "1.0",
+  "name": "Callback Example",
+  "expressionLang": "jsonpath",
+  "description": "A simple SW example that uses the callback state with timeouts and an OpenApi invocation as action",
+  "start": "Initialization",
+  "events": [
+    {
+      "name": "callbackEvent",
+      "source": "",
+      "type": "callback_response_events_in"
+    }
+  ],
+  "errors": [
+    {
+      "name": "execution error",
+      "code": "javax.ws.rs.ProcessingException"
+    }
+  ],
+  "functions": [
+    {
+      "name": "executeScript",
+      "type": "custom",
+      "operation": "script"
+    },
+    {
+      "name": "sendCallbackRequest",
+      "type": "rest",
+      "operation": "specs/external-service.yaml#sendRequest"
+    }
+  ],
+  "states": [
+    {
+      "name": "Initialization",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowInitialDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"callbackexamplewithtimeout.printWorkflowInitialDataAction\", kcontext);"
+            }
+          }
+        },
+        {
+          "name": "secondPrintWorkflowInitialDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"callbackexamplewithtimeout.secondPrintWorkflowInitialDataAction\", kcontext);"
+            }
+          }
+        }
+      ],
+      "transition": "CallbackState"
+    },
+    {
+      "name": "CallbackState",
+      "type": "callback",
+      "action": {
+        "name": "callbackAction",
+        "functionRef": {
+          "refName": "sendCallbackRequest",
+          "arguments": {
+            "callbackRequest": "{ \\\"query\\\": \\\"$.query\\\" }"
+          }
+        }
+      },
+      "eventRef": "callbackEvent",
+      "transition": "FinalizeSuccessful",
+      "onErrors": [
+        {
+          "errorRef": "execution error",
+          "transition": "FinalizeWithError"
+        }
+      ],
+      "timeouts": {
+        "eventTimeout": "PT60S"
+      }
+    },
+    {
+      "name": "FinalizeSuccessful",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowFinalizeSuccessfulDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"callbackexamplewithtimeout.printWorkflowFinalizeSuccessfulDataAction, workflow finalized successful\", kcontext);"
+            }
+          }
+        }
+      ],
+      "end": true
+    },
+    {
+      "name": "FinalizeWithError",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowFinalizeWithErrorDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"callbackexamplewithtimeout.printWorkflowFinalizeWithErrorDataAction, workflow finalized with errors\", kcontext);"
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

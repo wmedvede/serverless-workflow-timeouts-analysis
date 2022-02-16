@@ -1,0 +1,33 @@
+{
+  "id": "simplesubflow",
+  "version": "1.0",
+  "name": "Simple Subflow Example",
+  "expressionLang": "jsonpath",
+  "description": "A simple SW to be used as a subflow",
+  "start": "StartState",
+  "functions": [
+    {
+      "name": "executeScript",
+      "type": "custom",
+      "operation": "script"
+    }
+  ],
+  "states": [
+    {
+      "name": "StartState",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "printWorkflowInitialDataAction",
+          "functionRef": {
+            "refName": "executeScript",
+            "arguments": {
+              "script": "org.acme.HelloWorldServiceScripts.printWorkflowData(\"Printing the SimpleSubflow Workflowdata received as process parameter\", kcontext);"
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}
