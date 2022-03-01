@@ -26,6 +26,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -46,9 +47,21 @@ public class ExternalServiceResource {
 
     private static final String RESPONSE_EVENTS = "callback_response_events_out";
 
+    private static final String VISA_DENIED_OUT = "visa_denied_out";
+
+    private static final String VISA_APPROVED_OUT = "visa_approved_out";
+
     @Inject
     @Channel(RESPONSE_EVENTS)
     Emitter<String> eventsEmitter;
+
+    @Inject
+    @Channel(VISA_DENIED_OUT)
+    Emitter<String> visaDeniedEmitter;
+
+    @Inject
+    @Channel(VISA_APPROVED_OUT)
+    Emitter<String> visaApprovedEmitter;
 
     @Inject
     ObjectMapper objectMapper;
@@ -73,6 +86,23 @@ public class ExternalServiceResource {
         return Response.ok("{}").build();
     }
 
+    @Path("fireStateEventResponse")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response fireStateEventResponse(@QueryParam("processInstanceId") String processInstanceId, @QueryParam("eventType") String eventType, @QueryParam("emitter") String emitter) {
+        LOGGER.debug("Firing state event response, for processInstanceId:{}, eventType: {}, emitter: {}", processInstanceId, eventType, emitter);
+        String event = generateCloudEventForEventState(processInstanceId, eventType);
+        if (VISA_APPROVED_OUT.equals(emitter)) {
+            visaApprovedEmitter.send(event);
+        } else if (VISA_DENIED_OUT.equals(emitter)) {
+            visaDeniedEmitter.send(event);
+        } else {
+            throw new IllegalArgumentException("Emitter: " + emitter + " was not found");
+        }
+        return Response.ok("{}").build();
+    }
+
     public String generateCloudEvent(String processInstanceId, String queryResponse) {
         try {
             return objectMapper.writeValueAsString(CloudEventBuilder.v1()
@@ -83,6 +113,21 @@ public class ExternalServiceResource {
                     .withExtension("kogitoprocrefid", processInstanceId)
                     .withData(JsonCloudEventData.wrap(objectMapper.createObjectNode().put("answer", queryResponse)))
                     .build());
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public String generateCloudEventForEventState(String processInstanceId, String eventType) {
+        try {
+            return objectMapper.writeValueAsString(CloudEventBuilder.v1()
+                                                           .withId(UUID.randomUUID().toString())
+                                                           .withSource(URI.create(""))
+                                                           .withType(eventType)
+                                                           .withTime(OffsetDateTime.now())
+                                                           .withExtension("kogitoprocrefid", processInstanceId)
+                                                           .withData(JsonCloudEventData.wrap(objectMapper.createObjectNode()))
+                                                           .build());
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException(e);
         }

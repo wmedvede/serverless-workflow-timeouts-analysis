@@ -15,7 +15,7 @@
   "errors": [
     {
       "name": "execution error",
-      "code": "javax.ws.rs.ProcessingException"
+      "code": "java.lang.Exception"
     }
   ],
   "functions": [
