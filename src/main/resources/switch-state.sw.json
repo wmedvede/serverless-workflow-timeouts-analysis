@@ -1,19 +1,10 @@
 {
   "id": "switch_state",
-  "name": "Switch State Example",
+  "name": "Switch State Test",
   "expressionLang": "jsonpath",
   "version": "1.0",
-  "start": "AddInfo",
+  "start": "ChooseOnAge",
   "states": [
-    {
-      "name": "AddInfo",
-      "type": "inject",
-      "data": {
-        "name": "john",
-        "age": "20"
-      },
-      "transition": "ChooseOnAge"
-    },
     {
       "name": "ChooseOnAge",
       "type": "switch",
@@ -23,19 +14,19 @@
           "transition": "Approve"
         },
         {
-          "condition": "{{ $.[?(@.age  < 18)] }}",
+          "condition": "{{ $.[?((@.age  >= 0) && (@.age  < 18))] }}",
           "transition": "Deny"
         }
       ],
       "defaultCondition": {
-        "transition": "Approve"
+        "transition": "Invalidate"
       }
     },
     {
       "name": "Approve",
       "type": "inject",
       "data": {
-        "decision": "Approve"
+        "decision": "Approved"
       },
       "end": true
     },
@@ -44,6 +35,14 @@
       "type": "inject",
       "data": {
         "decision": "Denied"
+      },
+      "end": true
+    },
+    {
+      "name": "Invalidate",
+      "type": "inject",
+      "data": {
+        "decision": "Invalidated"
       },
       "end": true
     }
