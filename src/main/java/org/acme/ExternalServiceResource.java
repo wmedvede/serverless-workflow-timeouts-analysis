@@ -19,6 +19,8 @@ package org.acme;
 import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -34,8 +36,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.jackson.JsonCloudEventData;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,6 +106,28 @@ public class ExternalServiceResource {
             throw new IllegalArgumentException("Emitter: " + emitter + " was not found");
         }
         return Response.ok("{}").build();
+    }
+
+    @Incoming("kogito_outgoing_stream_reader")
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    public CompletionStage<Void> onEventEvent(Message<String> message) {
+        LOGGER.info("Receive message: {}", message.getPayload());
+        if (message.getPayload() != null && message.getPayload().contains("nack")) {
+            LOGGER.debug("A nack message was received");
+            return message.nack(new Exception("A nack message was received", new Exception("The internal cause!!")));
+        } else {
+            return CompletableFuture.runAsync(() -> handleEvent(message.getPayload()))
+                    .thenRun(message::ack);
+        }
+    }
+
+    private void handleEvent(String payload) {
+        try {
+            //do what you want;
+        } catch (Exception e) {
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        }
     }
 
     public String generateCloudEvent(String processInstanceId, String queryResponse) {
